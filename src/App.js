@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { Query } from "react-apollo";
 import gql from "graphql-tag";
 
-import Body from "./Body";
+import Body from "./scores";
 
 //Query to get list of categories
 const basicData = gql`
