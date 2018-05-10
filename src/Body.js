@@ -28,6 +28,7 @@ class Body extends PureComponent {
         let variables = { category, size: count };
         return (
             <div className="score" style={{ display: "flex", height: "100%", flexDirection: "column" }}>
+                <label> Categories </label>
                 <div>
                     <select
                         value={category}
@@ -39,8 +40,13 @@ class Body extends PureComponent {
                         )}
                     </select>
                 </div>
+                <label> Dimensions </label>
                 <div style={{ display: "flex", width: "100%", flex: "1" }}>
                     <div style={{ border: "solid 1px black", width: "300px" }}>
+                        <label>
+                            {" "}
+                            <b>NUMBER</b>{" "}
+                        </label>
                         <input
                             type="number"
                             value={count}
@@ -48,7 +54,42 @@ class Body extends PureComponent {
                                 this.setState({ count: e.target.value });
                             }}
                         />
+
+                        <div title="ORDER">
+                            <label>
+                                {" "}
+                                <b>ORDER</b>{" "}
+                            </label>
+                            <select id="select">
+                                <option value="Alphabetical">Alphabetical</option>
+                                <option value="Random">Random</option>
+                            </select>
+                        </div>
+
+                        <div title="CLASS">
+                            <label>
+                                {" "}
+                                <b>CLASS </b>
+                            </label>
+                            <select id="select">
+                                <option value="Nouns">Nouns</option>
+                                <option value="Adjectives">Adjectives</option>
+                                <option value="Nouns">Proper nouns</option>
+                            </select>
+                        </div>
+
+                        <div title="GROUPING">
+                            <label>
+                                {" "}
+                                <b> GROUPING </b>{" "}
+                            </label>
+                            <select id="select">
+                                <option value="Single words"> Single words</option>
+                                <option value="Bi-grams">Bi-grams</option>
+                            </select>
+                        </div>
                     </div>
+
                     <div style={{ border: "solid 1px black", flex: "1" }}>
                         <Query query={loadData} variables={variables}>
                             {result => {
@@ -67,10 +108,3 @@ class Body extends PureComponent {
 }
 
 export default Body;
-
-/*
-<div>
-<div>
-  
-</div>
-</div> */
