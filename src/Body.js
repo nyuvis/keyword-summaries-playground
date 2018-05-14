@@ -1,6 +1,8 @@
 import React, { PureComponent } from "react";
 import gql from "graphql-tag";
 import { Query } from "react-apollo";
+import { sortBy, random } from "lodash";
+import { extent } from "d3-array";
 
 const loadData = gql`
     query getData($category: [String], $size: Int) {
@@ -9,13 +11,16 @@ const loadData = gql`
                 Size
                 Values(field: "text", discriminant: true, size: $size) {
                     Key
-                    Stat
+                    Score
+                    Count
                 }
             }
             Noise: Select {
+                Size
                 Values(field: "text", size: $size) {
                     Key
-                    Stat
+                    Score
+                    Count
                 }
             }
         }
@@ -25,7 +30,7 @@ const loadData = gql`
 class Body extends PureComponent {
     constructor(props) {
         super(props);
-        this.state = { count: 20, category: "Steakhouses" };
+        this.state = { count: 20, category: "Steakhouses", discriminant: true, sortby: "Key", noise: 0 };
     }
     render() {
         const { categories } = this.props;
@@ -44,7 +49,7 @@ class Body extends PureComponent {
                         onChange={e => {
                             this.setState({ category: e.target.value });
                         }}>
-                        {categories.map(
+                        {sortBy(categories, "Key").map(
                             d => <option key={d.Key}>{d.Key}</option> //Key is the name of the category
                         )}
                     </select>
@@ -135,6 +140,10 @@ class Body extends PureComponent {
                                 {noise}
                             </div>
                         </div>
+
+                        <div>
+                            <button onclick="myFunction()"> Apply </button>
+                        </div>
                     </div>
 
                     <div style={{ border: "solid 1px black", flex: "1" }}>
@@ -144,6 +153,26 @@ class Body extends PureComponent {
                                 const { data } = result;
                                 console.log(data);
                                 if (!data.Dataset) return <div>Loading</div>; //Checking if the data is loaded
+
+                                // Prepare words
+                                let keywords = data.Dataset.Keywords.Values;
+                                let noise = data.Dataset.Noise.Values;
+
+                                let numKeywords = keywords.length;
+                                let numNoise = Math.floor(variables.noise * numKeywords);
+                                numKeywords = numKeywords - numNoise;
+                                keywords = keywords.slice(0, numKeywords);
+
+                                if (variables.sortby !== "Key") {
+                                    let valueExtent = extent(keywords, d => d[variables.sortby]);
+                                    noise = noise.map(d => ({
+                                        ...d,
+                                        [variables.sortby]: random(...valueExtent)
+                                    }));
+                                }
+                                keywords = [...keywords, ...noise.slice(0, numNoise)];
+
+                                keywords = sortBy(keywords, [variables.sortby]);
 
                                 //Display Keywords
                                 return <div>{data.Dataset.Keywords.Values.map(d => <div key={d.Key}>{d.Key}</div>)}</div>;
