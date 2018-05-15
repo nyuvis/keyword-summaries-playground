@@ -1,15 +1,15 @@
 import React, { PureComponent } from "react";
 import gql from "graphql-tag";
 import { Query } from "react-apollo";
-import { sortBy, random } from "lodash";
+import { orderBy, sortBy, random, shuffle } from "lodash";
 import { extent } from "d3-array";
 
 const loadData = gql`
-    query getData($category: [String], $size: Int) {
+    query getData($category: [String], $count: Int) {
         Dataset(ID: 19) {
             Keywords: Select(filter: { field: "categories", in: $category }) {
                 Size
-                Values(field: "text", discriminant: true, size: $size) {
+                Values(field: "text", discriminant: true, size: $count) {
                     Key
                     Score
                     Count
@@ -17,7 +17,7 @@ const loadData = gql`
             }
             Noise: Select {
                 Size
-                Values(field: "text", size: $size) {
+                Values(field: "text", size: $count) {
                     Key
                     Score
                     Count
@@ -30,15 +30,35 @@ const loadData = gql`
 class Body extends PureComponent {
     constructor(props) {
         super(props);
-        this.state = { count: 20, category: "Steakhouses", discriminant: true, sortby: "Key", noise: 0 };
+        this.state = {
+            realtime: true,
+            inputs: {
+                count: 20,
+                category: "Steakhouses",
+                discriminant: true,
+                order: "Key",
+                noise: 0
+            }
+        };
+        this.state.variables = this.state.inputs;
     }
+
+    setVariable(name, value) {
+        let newState = { inputs: { ...this.state.inputs, [name]: value } };
+        if (this.state.realtime) {
+            console.log("Updating Variables");
+            newState.variables = { ...newState.inputs };
+        }
+        this.setState(newState);
+    }
+
     render() {
         const { categories } = this.props;
-        const { count, category, order, clas, group, noise } = this.state;
+        const { count, category, order, clas, group, noise } = this.state.inputs;
 
         console.log(this.state);
 
-        let variables = { category, size: count, order, clas, group, noise };
+        let variables = this.state.variables;
 
         return (
             <div className="score" style={{ display: "flex", height: "100%", flexDirection: "column" }}>
@@ -47,7 +67,7 @@ class Body extends PureComponent {
                     <select
                         value={category}
                         onChange={e => {
-                            this.setState({ category: e.target.value });
+                            this.setVariable("category", e.target.value);
                         }}>
                         {sortBy(categories, "Key").map(
                             d => <option key={d.Key}>{d.Key}</option> //Key is the name of the category
@@ -58,6 +78,7 @@ class Body extends PureComponent {
                 <div style={{ display: "flex", width: "100%", flex: "1" }}>
                     <div style={{ border: "solid 1px black", width: "300px" }}>
                         <div className="Section-title"> Dimensions </div>
+
                         <label>
                             {" "}
                             <b>NUMBER</b>{" "}
@@ -66,7 +87,7 @@ class Body extends PureComponent {
                             type="number"
                             value={count}
                             onChange={e => {
-                                this.setState({ count: e.target.value });
+                                this.setVariable("count", e.target.value);
                             }}
                         />
 
@@ -79,12 +100,12 @@ class Body extends PureComponent {
                                 id="select"
                                 value={order}
                                 onChange={e => {
-                                    this.setState({ order: e.target.value });
+                                    this.setVariable("order", e.target.value);
                                 }}>
-                                <option value="Alphabetical">Alphabetical</option>
+                                <option value="Key">Alphabetical</option>
                                 <option value="Random">Random</option>
                                 <option value="Score">Score</option>
-                                <option value="Frequency">Frequency</option>
+                                <option value="Count">Frequency</option>
                             </select>
                         </div>
 
@@ -97,7 +118,7 @@ class Body extends PureComponent {
                                 id="select"
                                 value={clas}
                                 onChange={e => {
-                                    this.setState({ clas: e.target.value });
+                                    this.setVariable("clas", e.target.value);
                                 }}>
                                 <option value="Nouns">Nouns</option>
                                 <option value="Adjectives">Adjectives</option>
@@ -113,7 +134,7 @@ class Body extends PureComponent {
                                 id="select"
                                 value={group}
                                 onChange={e => {
-                                    this.setState({ group: e.target.value });
+                                    this.setVariable("group", e.target.value);
                                 }}>
                                 <option value="Single words"> Single words</option>
                                 <option value="Bi-grams">Bi-grams</option>
@@ -124,17 +145,16 @@ class Body extends PureComponent {
                             <label>
                                 <b>NOISE </b>
                             </label>
-                            <div class="slidecontainer">
+                            <div className="slidecontainer">
                                 <input
                                     type="range"
                                     min="0"
                                     max="100"
-                                    value="0"
-                                    class="slider"
+                                    className="slider"
                                     id="myRange"
                                     value={noise}
                                     onChange={e => {
-                                        this.setState({ noise: e.target.value });
+                                        this.setVariable("noise", e.target.value);
                                     }}
                                 />
                                 {noise}
@@ -142,7 +162,18 @@ class Body extends PureComponent {
                         </div>
 
                         <div>
-                            <button onclick="myFunction()"> Apply </button>
+                            <div>
+                                Auto Update{" "}
+                                <input type="checkbox" checked={this.state.realtime} onChange={e => this.setState({ realtime: e.target.checked })} />
+                            </div>
+                            <button
+                                onClick={() => {
+                                    this.setState({
+                                        variables: { ...this.state.inputs }
+                                    });
+                                }}>
+                                Apply
+                            </button>
                         </div>
                     </div>
 
@@ -159,23 +190,28 @@ class Body extends PureComponent {
                                 let noise = data.Dataset.Noise.Values;
 
                                 let numKeywords = keywords.length;
-                                let numNoise = Math.floor(variables.noise * numKeywords);
+                                let numNoise = Math.floor(variables.noise / 100 * numKeywords);
                                 numKeywords = numKeywords - numNoise;
                                 keywords = keywords.slice(0, numKeywords);
-
-                                if (variables.sortby !== "Key") {
-                                    let valueExtent = extent(keywords, d => d[variables.sortby]);
+                                console.log(variables.order);
+                                if (variables.order !== "Key") {
+                                    let valueExtent = extent(keywords, d => d[variables.order]);
                                     noise = noise.map(d => ({
                                         ...d,
-                                        [variables.sortby]: random(...valueExtent)
+                                        [variables.order]: random(...valueExtent)
                                     }));
                                 }
                                 keywords = [...keywords, ...noise.slice(0, numNoise)];
-
-                                keywords = sortBy(keywords, [variables.sortby]);
+                                if (variables.order === "Random") {
+                                    keywords = shuffle(keywords);
+                                } else if (variables.order !== "Key") {
+                                    keywords = orderBy(keywords, [variables.order], "desc");
+                                } else {
+                                    keywords = orderBy(keywords, [variables.order]);
+                                }
 
                                 //Display Keywords
-                                return <div>{data.Dataset.Keywords.Values.map(d => <div key={d.Key}>{d.Key}</div>)}</div>;
+                                return <div>{keywords.map(d => <div key={d.Key}>{d.Key}</div>)}</div>;
                             }}
                         </Query>
                     </div>
