@@ -3,8 +3,8 @@ import { Query } from "react-apollo";
 import gql from "graphql-tag";
 import "./App.css";
 
-//import Body from "./scores";
-import Body from "./Body";
+//import Body from "./Body";
+import Body from "./data/study";
 
 //Query to get list of categories
 const basicData = gql`
