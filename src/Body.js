@@ -6,7 +6,7 @@ import { extent } from "d3-array";
 
 const loadData = gql`
     query getData($category: [String], $count: Int) {
-        Dataset(ID: 19) {
+        Dataset(ID: 24) {
             Keywords: Select(filter: { field: "categories", in: $category }) {
                 Size
                 Values(field: "text", discriminant: true, size: $count) {
@@ -69,9 +69,10 @@ class Body extends PureComponent {
                         onChange={e => {
                             this.setVariable("category", e.target.value);
                         }}>
-                        {sortBy(categories, "Key").map(
-                            d => <option key={d.Key}>{d.Key}</option> //Key is the name of the category
-                        )}
+                        {console.log(categories.map(d => d.Key + "," + d.Count).join("\n")) ||
+                            categories.map(
+                                d => <option key={d.Key}>{d.Key}</option> //Key is the name of the category
+                            )}
                     </select>
                 </div>
 
@@ -205,9 +206,9 @@ class Body extends PureComponent {
                                 if (variables.order === "Random") {
                                     keywords = shuffle(keywords);
                                 } else if (variables.order !== "Key") {
-                                    keywords = orderBy(keywords, [variables.order], "desc");
+                                    //keywords = orderBy(keywords, [variables.order], "desc");
                                 } else {
-                                    keywords = orderBy(keywords, [variables.order]);
+                                    //keywords = orderBy(keywords, [variables.order]);
                                 }
 
                                 //Display Keywords

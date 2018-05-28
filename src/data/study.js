@@ -55,101 +55,74 @@ class Body extends PureComponent {
     render() {
         const { categories } = this.props;
         const { count, category, order, clas, group, noise } = this.state.inputs;
+        let categoriesList = ["Chinese", "American", "Japanese"];
 
         console.log(this.state);
 
         let variables = this.state.variables;
 
         return (
-            <div style={{ display: "flex", width: "100%", flex: "1" }}>
-                <div style={{ border: "solid 1px black", width: "300px" }}>
-                    <div className="Section-title"> KEYWORDS </div>
-
-                    <Query query={loadData} variables={variables}>
-                        {result => {
-                            const { data } = result;
-                            console.log(data);
-                            if (!data.Dataset) return <div>Loading</div>; //Checking if the data is loaded
-
-                            // Prepare words
-                            let keywords = data.Dataset.Keywords.Values;
-                            let noise = data.Dataset.Noise.Values;
-
-                            let numKeywords = keywords.length;
-                            let numNoise = Math.floor(variables.noise / 100 * numKeywords);
-                            numKeywords = numKeywords - numNoise;
-                            keywords = keywords.slice(0, numKeywords);
-                            console.log(variables.order);
-                            if (variables.order !== "Key") {
-                                let valueExtent = extent(keywords, d => d[variables.order]);
-                                noise = noise.map(d => ({
-                                    ...d,
-                                    [variables.order]: random(...valueExtent)
-                                }));
-                            }
-                            keywords = [...keywords, ...noise.slice(0, numNoise)];
-                            if (variables.order === "Random") {
-                                keywords = shuffle(keywords);
-                            } else if (variables.order !== "Key") {
-                                keywords = orderBy(keywords, [variables.order], "desc");
-                            } else {
-                                keywords = orderBy(keywords, [variables.order]);
-                            }
-
-                            //Display Keywords
-                            return <div>{keywords.map(d => <div key={d.Key}>{d.Key}</div>)}</div>;
-                        }}
-                    </Query>
+            <div>
+                <div>
+                    {this.props.category} - {this.props.noise}
                 </div>
-
                 <div style={{ display: "flex", width: "100%", flex: "1" }}>
                     <div style={{ border: "solid 1px black", width: "300px" }}>
-                        <div className="Section-title"> CATEGORIES </div>
+                        <div className="Section-title"> KEYWORDS </div>
 
-                        <form action="action_page.php" method="get">
-                            <div>
-                                <input type="checkbox" class="check" />
-                                <label> Chinese </label>
-                            </div>
-                            <div>
-                                <input type="checkbox" class="check" />
-                                <label> American </label>
-                            </div>
-                            <div>
-                                <input type="checkbox" />
-                                <label> Italian </label>
-                            </div>
-                            <div>
-                                <input type="checkbox" />
-                                <label> Nightlife </label>
-                            </div>
-                            <div>
-                                <input type="checkbox" />
-                                <label> Burgers </label>
-                            </div>
-                            <div>
-                                <input type="checkbox" />
-                                <label> Steackhouses </label>
-                            </div>
-                            <div>
-                                <input type="checkbox" />
-                                <label> Mexican </label>
-                            </div>
-                            <div>
-                                <input type="checkbox" />
-                                <label> Desserts </label>
-                            </div>
-                            <div>
-                                <input type="checkbox" />
-                                <label> Japanese </label>
-                            </div>
-                            <div>
-                                <input type="checkbox" />
-                                <label> Breakfast and Brunch </label>
-                            </div>
-                        </form>
+                        <Query query={loadData} variables={variables}>
+                            {result => {
+                                const { data } = result;
+                                console.log(data);
+                                if (!data.Dataset) return <div>Loading</div>; //Checking if the data is loaded
+
+                                // Prepare words
+
+                                let keywords = data.Dataset.Keywords.Values;
+                                let noise = data.Dataset.Noise.Values;
+
+                                let numKeywords = keywords.length;
+                                let numNoise = Math.floor(variables.noise / 100 * numKeywords);
+                                numKeywords = numKeywords - numNoise;
+                                keywords = keywords.slice(0, numKeywords);
+                                console.log(variables.order);
+                                if (variables.order !== "Key") {
+                                    let valueExtent = extent(keywords, d => d[variables.order]);
+                                    noise = noise.map(d => ({
+                                        ...d,
+                                        [variables.order]: random(...valueExtent)
+                                    }));
+                                }
+                                keywords = [...keywords, ...noise.slice(0, numNoise)];
+                                if (variables.order === "Random") {
+                                    keywords = shuffle(keywords);
+                                } else if (variables.order !== "Key") {
+                                    keywords = orderBy(keywords, [variables.order], "desc");
+                                } else {
+                                    keywords = orderBy(keywords, [variables.order]);
+                                }
+
+                                //Display Keywords
+                                return <div>{keywords.map(d => <div key={d.Key}>{d.Key}</div>)}</div>;
+                            }}
+                        </Query>
+                    </div>
+
+                    <div style={{ display: "flex", width: "100%", flex: "1" }}>
+                        <div style={{ border: "solid 1px black", width: "300px" }}>
+                            <div className="Section-title"> CATEGORIES </div>
+
+                            <label> Select a label </label>
+                            {categoriesList.map(d => (
+                                <div key={d}>
+                                    <input type="radio" name="category" className="check" />
+                                    <label> {d} </label>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
+                <button onClick={() => this.props.next()}> NEXT </button>
             </div>
         );
     }
